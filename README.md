@@ -55,6 +55,7 @@ const {
    } = graphql;
 ```
 
+####Queries
 The first major item that is needed in a schema is a RootQuery. This is considered the **entry point to your schema**.
 It requires the **name** and **fields** parameters as laid out below
 ```angular2html
@@ -121,7 +122,9 @@ There are two required parameters in the object:
 - **name** - typically upper case and describes the type we're defining
 - **fields** - these are the properties that the new Type will have
     - each fields' type needs to be defined using a GraphQL method from above
-    - fields is what allows GraphQL to jump 
+    - fields is what allows GraphQL to jump to the point in your db that you are looking for
+    - the reason you wrap the fields object in a arrow function is that the fields gets defined before executed since 
+    it's within closure scope. When it's executed, it will now execute correctly.
 - **users** - you'll see that this field has a `type` and then a `resolve()` function. This is how you access other Types
 within other queries. 
     - **type** - identify which Type you are trying to access
@@ -129,3 +132,53 @@ within other queries.
     In this case you'll get a `companyId`, which comes from the user inside the database. You then run query using that
     `companyId` to fetch the information on the company
     
+####Mutations
+Mutations is what GraphQL uses to make changes to the data. You'll notice that the setup is extremely similar to a 
+query setup.
+
+- `args` is used in the same way, except this is the data you want added/removed/updated on the db
+- `resolve` function works the same, this is where you hit the endpoint and pass in the data that's required
+
+
+```angular2html
+const mutation = new GraphQLObjectType({
+  name: 'Mutation',
+  fields: {
+    addUser: {
+      type: UserType,
+      args: {
+        firstName: { type: new GraphQLNonNull(GraphQLString) },
+        age: { type: new GraphQLNonNull(GraphQLInt) },
+        companyId: { type: GraphQLString }
+      },
+      resolve(parentValue, { firstName, age }) {
+        return axios.post('http://localhost:3000/users', { firstName, age })
+	        .then(resp => resp.data);
+      }
+    },
+    deleteUser: {
+      type: UserType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) }
+      },
+      resolve(parentValue, {id}) {
+        return axios.delete(`http://localhost:3000/users/${id}`)
+          .then(resp => resp.data);
+      }
+    },
+    editUser: {
+      type: UserType,
+      args: {
+        id: { type: new GraphQLNonNull(GraphQLString) },
+        firstName: { type: GraphQLString },
+        age: { type: GraphQLInt },
+        companyId: { type: GraphQLString }
+      },
+      resolve(parentValue, args) {
+        return axios.patch(`http://localhost:3000/users/${args.id}`, args)
+	        .then(resp => resp.data);
+      }
+    }
+  }
+});
+```
