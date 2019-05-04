@@ -182,3 +182,5 @@ const mutation = new GraphQLObjectType({
   }
 });
 ```
+
+NOTE: GraphQL Express is the "standard" version supported
